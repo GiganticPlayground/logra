@@ -1,0 +1,51 @@
+{
+  "name": "logra",
+  "version": "0.1.0",
+  "description": "Lightweight contextual logging utilities with async context support.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GiganticPlayground/logra.git"
+  },
+  "homepage": "https://github.com/GiganticPlayground/logra",
+  "bugs": {
+    "url": "https://github.com/GiganticPlayground/logra/issues"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "demo:styles": "npm run build && node scripts/log-styles-demo.cjs",
+    "prepare": "npm run build",
+    "release:patch": "npm version patch",
+    "release:minor": "npm version minor",
+    "release:major": "npm version major",
+    "test": "npm run build && node --test test/**/*.test.cjs"
+  },
+  "keywords": [
+    "logging",
+    "logger",
+    "async-local-storage",
+    "context"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "safe-stable-stringify": "2.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.5.2",
+    "typescript": "5.9.2"
+  }
+}
