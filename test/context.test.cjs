@@ -40,3 +40,75 @@ test("ContextManager runContext preserves context across async boundaries", asyn
   });
   assert.equal(ContextManager.getContext(contextKey), undefined);
 });
+
+test("ContextManager preserves context inside nested timers", async () => {
+  const contextKey = "context-test-timers";
+
+  const result = await ContextManager.runContext(async () => {
+    ContextManager.addContext("requestId", "req-timer", contextKey);
+
+    return await new Promise((resolve) => {
+      setTimeout(() => {
+        assert.deepEqual(ContextManager.getContext(contextKey), {
+          requestId: "req-timer"
+        });
+
+        ContextManager.addContext("step", "outer-timer", contextKey);
+
+        setTimeout(() => {
+          resolve(ContextManager.getContext(contextKey));
+        }, 0);
+      }, 0);
+    });
+  }, contextKey, {});
+
+  assert.deepEqual(result, {
+    requestId: "req-timer",
+    step: "outer-timer"
+  });
+  assert.equal(ContextManager.getContext(contextKey), undefined);
+});
+
+test("ContextManager keeps concurrent timer contexts isolated", async () => {
+  const contextKey = "context-test-isolated-timers";
+
+  const [firstResult, secondResult] = await Promise.all([
+    ContextManager.runContext(async () => {
+      ContextManager.addContext("requestId", "req-1", contextKey);
+
+      return await new Promise((resolve) => {
+        setTimeout(() => {
+          ContextManager.addContext("timer", "first", contextKey);
+
+          setTimeout(() => {
+            resolve(ContextManager.getContext(contextKey));
+          }, 5);
+        }, 10);
+      });
+    }, contextKey, {}),
+    ContextManager.runContext(async () => {
+      ContextManager.addContext("requestId", "req-2", contextKey);
+
+      return await new Promise((resolve) => {
+        setTimeout(() => {
+          ContextManager.addContext("timer", "second", contextKey);
+
+          setTimeout(() => {
+            resolve(ContextManager.getContext(contextKey));
+          }, 0);
+        }, 0);
+      });
+    }, contextKey, {})
+  ]);
+
+  assert.deepEqual(firstResult, {
+    requestId: "req-1",
+    timer: "first"
+  });
+  assert.deepEqual(secondResult, {
+    requestId: "req-2",
+    timer: "second"
+  });
+  assert.notDeepEqual(firstResult, secondResult);
+  assert.equal(ContextManager.getContext(contextKey), undefined);
+});
